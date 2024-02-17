@@ -1,12 +1,12 @@
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import json
 import os
 from gpt_researcher.utils.websocket_manager import WebSocketManager
 from .utils import write_md_to_pdf
 
+import asyncio
 
 class ResearchRequest(BaseModel):
     task: str
@@ -15,11 +15,6 @@ class ResearchRequest(BaseModel):
 
 
 app = FastAPI()
-
-app.mount("/site", StaticFiles(directory="./frontend"), name="site")
-app.mount("/static", StaticFiles(directory="./frontend/static"), name="static")
-
-templates = Jinja2Templates(directory="./frontend")
 
 manager = WebSocketManager()
 
@@ -31,10 +26,10 @@ def startup_event():
         os.makedirs("outputs")
     app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
 
-@app.get("/")
-async def read_root(request: Request):
-    return templates.TemplateResponse('index.html', {"request": request, "report": None})
-
+async def run_task(task, report_type, websocket):
+    report = await manager.start_streaming(task, report_type, websocket)
+    path = await write_md_to_pdf(report)
+    await websocket.send_json({"type": "path", "output": path})
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -47,9 +42,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 task = json_data.get("task")
                 report_type = json_data.get("report_type")
                 if task and report_type:
-                    report = await manager.start_streaming(task, report_type, websocket)
-                    path = await write_md_to_pdf(report)
-                    await websocket.send_json({"type": "path", "output": path})
+                    asyncio.create_task(run_task(task, report_type, websocket))
                 else:
                     print("Error: not enough parameters provided.")
 
