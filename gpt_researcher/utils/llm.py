@@ -38,17 +38,15 @@ async def create_chat_completion(
         raise ValueError(f"Max tokens cannot be more than 8001, but got {max_tokens}")
 
     # create response
-    for attempt in range(10):  # maximum of 10 attempts
-        response = await send_chat_completion_request(
-            messages, model, temperature, max_tokens, stream, llm_provider, websocket
-        )
-        return response
+    return await send_chat_completion_request(
+        messages, model, temperature, max_tokens, stream, llm_provider, websocket
+    )
 
-    logging.error("Failed to get response from OpenAI API")
-    raise RuntimeError("Failed to get response from OpenAI API")
+    # logging.error("Failed to get response from OpenAI API")
+    # raise RuntimeError("Failed to get response from OpenAI API")
 
 
-import logging
+# import logging
 
 
 async def send_chat_completion_request(

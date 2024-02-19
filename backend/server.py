@@ -28,6 +28,7 @@ def startup_event():
 
 async def run_task(task, report_type, websocket):
     report = await manager.start_streaming(task, report_type, websocket)
+    await websocket.send_json({"type": "search-end", "output": report})
     path = await write_md_to_pdf(report)
     await websocket.send_json({"type": "path", "output": path})
 

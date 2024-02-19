@@ -214,12 +214,33 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
     generate_prompt = get_report_by_type(report_type)
     report = ""
     try:
+        system_prompt = f"""
+        You are a helpful assistant. You will try your best to answer my questions.
+        Here is how you should answer my questions:
+        - use the contex provided to answer the question
+
+        Be very CONCISE in your responses, First show me your answer,
+        and then show me the SOURCE(s) and EXTRACT(s) to justify your answer,
+        in this format:
+
+        <your answer here>
+        SOURCE: https://www.wikihow.com/Be-a-Good-Assistant-Manager
+        EXTRACT: Be a Good Assistant ... requires good leadership skills.
+
+        SOURCE: ...
+        EXTRACT: ...
+
+        For the EXTRACT, ONLY show up to first 3 words, and last 3 words.
+        DO NOT MAKE UP YOUR OWN SOURCES; ONLY USE SOURCES YOU FIND FROM A WEB SEARCH.
+
+        YOU MUST WRITE THE REPORT WITH MARKDOWN SYNTAX.
+        """
         report = await create_chat_completion(
             model=cfg.smart_llm_model,
             messages=[
-                {"role": "system", "content": f"{agent_role_prompt}"},
+                {"role": "system", "content": f"{system_prompt}"},
                 {"role": "user", "content": f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"}],
-            temperature=0,
+            temperature=0.2,
             llm_provider=cfg.llm_provider,
             stream=True,
             websocket=websocket,
