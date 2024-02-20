@@ -8,6 +8,7 @@ def generate_search_queries_prompt(question, max_iterations=3):
     """
     return f'You are a helpful assistant that returns a python list of strings. Reponses only contain this python list and no introductory text.'\
            f'ONLY provide a python list of 4 Google search queries related to the input question. Respond STRICTLY in the format: ["Query 1", "Query 2", "Query 3"] without any introductory or additional text.'\
+           f'ONLY write reponses with same LANGAUGE as the question'\
            f'Input question: {question}'
     # return f'Write {max_iterations} google search queries to search online that form an objective opinion from the following: "{question}"' \
     #        f'Use the current date if needed: {datetime.now().strftime("%B %d, %Y")}.\n' \
@@ -75,7 +76,8 @@ def generate_custom_report_prompt(query_prompt, context, report_format="apa", to
             relevant results that answer the query accurately. Place these citations at the end \
             of the sentence or paragraph that reference them.\n"\
             f"Please do your best, this is very important to my career. " \
-            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"
+            f"Assume that the current date is {datetime.now().strftime('%B %d, %Y')}"\
+            f"PLEASE RESPOND only WITH THE SAME LANGAUGE used in the query or task"
     # return f'Information: """{context}"""\n\n' \
     #        f'Using the above information, answer the following' \
     #        f' query or task: "{query_prompt}" in a compact report --' \

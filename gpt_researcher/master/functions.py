@@ -1,4 +1,5 @@
 import asyncio
+from gpt_researcher.config.config import Config
 from gpt_researcher.utils.llm import *
 from gpt_researcher.scraper import Scraper
 from gpt_researcher.master.prompts import *
@@ -48,7 +49,7 @@ def get_retriever(retriever):
     return retriever
 
 
-async def choose_agent(query, cfg):
+async def choose_agent(query, cfg: Config):
     """
     Chooses the agent automatically
     Args:
@@ -66,7 +67,7 @@ async def choose_agent(query, cfg):
                 {"role": "system", "content": f"{auto_agent_instructions()}"},
                 {"role": "user", "content": f"task: {query}"}],
             temperature=0,
-            llm_provider=cfg.llm_provider
+            base_url=cfg.base_url
         )
         agent_dict = json.loads(response)
         return agent_dict["server"], agent_dict["agent_role_prompt"]
@@ -74,7 +75,7 @@ async def choose_agent(query, cfg):
         return "Default Agent", "You are an AI critical thinker research assistant. Your sole purpose is to write well written, critically acclaimed, objective and structured reports on given text."
 
 
-async def get_sub_queries(query, agent_role_prompt, cfg):
+async def get_sub_queries(query, agent_role_prompt, cfg: Config):
     """
     Gets the sub queries
     Args:
@@ -93,7 +94,7 @@ async def get_sub_queries(query, agent_role_prompt, cfg):
             {"role": "system", "content": f"{agent_role_prompt}"},
             {"role": "user", "content": generate_search_queries_prompt(query, max_iterations=max_research_iterations)}],
         temperature=0,
-        llm_provider=cfg.llm_provider
+        base_url=cfg.base_url
     )
     sub_queries = json.loads(response)
     return sub_queries
@@ -167,7 +168,7 @@ async def summarize(query, content, agent_role_prompt, cfg, websocket=None):
     return concatenated_summaries
 
 
-async def summarize_url(query, raw_data, agent_role_prompt, cfg):
+async def summarize_url(query, raw_data, agent_role_prompt, cfg: Config):
     """
     Summarizes the text
     Args:
@@ -188,7 +189,7 @@ async def summarize_url(query, raw_data, agent_role_prompt, cfg):
                 {"role": "system", "content": f"{agent_role_prompt}"},
                 {"role": "user", "content": f"{generate_summary_prompt(query, raw_data)}"}],
             temperature=0,
-            llm_provider=cfg.llm_provider
+            base_url=cfg.base_url
         )
     except Exception as e:
         print(f"{Fore.RED}Error in summarize: {e}{Style.RESET_ALL}")
@@ -196,7 +197,7 @@ async def summarize_url(query, raw_data, agent_role_prompt, cfg):
 
 
 
-async def generate_report(query, context, agent_role_prompt, report_type, websocket, cfg):
+async def generate_report(query, context, agent_role_prompt, report_type, websocket, cfg: Config):
     """
     generates the final report
     Args:
@@ -241,10 +242,10 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
                 {"role": "system", "content": f"{system_prompt}"},
                 {"role": "user", "content": f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"}],
             temperature=0.2,
-            llm_provider=cfg.llm_provider,
             stream=True,
             websocket=websocket,
-            max_tokens=cfg.smart_token_limit
+            max_tokens=cfg.smart_token_limit,
+            base_url=cfg.base_url
         )
     except Exception as e:
         print(f"{Fore.RED}Error in generate_report: {e}{Style.RESET_ALL}")

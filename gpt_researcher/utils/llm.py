@@ -2,9 +2,9 @@
 from __future__ import annotations
 import json
 from fastapi import WebSocket
-from langchain.adapters import openai as lc_openai
 from colorama import Fore, Style
 from typing import Optional
+from litellm import completion
 
 from gpt_researcher.master.prompts import auto_agent_instructions
 
@@ -17,6 +17,7 @@ async def create_chat_completion(
         llm_provider: Optional[str] = None,
         stream: Optional[bool] = False,
         websocket: WebSocket | None = None,
+        base_url: Optional[str] = None
 ) -> str:
     """Create a chat completion using the OpenAI API
     Args:
@@ -39,42 +40,36 @@ async def create_chat_completion(
 
     # create response
     return await send_chat_completion_request(
-        messages, model, temperature, max_tokens, stream, llm_provider, websocket
+        messages, model, temperature, max_tokens, stream, llm_provider, websocket, base_url
     )
-
-    # logging.error("Failed to get response from OpenAI API")
-    # raise RuntimeError("Failed to get response from OpenAI API")
-
-
-# import logging
 
 
 async def send_chat_completion_request(
-        messages, model, temperature, max_tokens, stream, llm_provider, websocket
+        messages, model, temperature, max_tokens, stream, llm_provider, websocket, base_url=None
 ):
     if not stream:
-        result = lc_openai.ChatCompletion.create(
+        result = completion(
             model=model,  # Change model here to use different models
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            provider=llm_provider,  # Change provider here to use a different API
+            base_url=base_url
         )
+
         return result["choices"][0]["message"]["content"]
     else:
         return await stream_response(model, messages, temperature, max_tokens, llm_provider, websocket)
 
 
-async def stream_response(model, messages, temperature, max_tokens, llm_provider, websocket=None):
+async def stream_response(model, messages, temperature, max_tokens, llm_provider, websocket=None, base_url=None):
     paragraph = ""
     response = ""
 
-    for chunk in lc_openai.ChatCompletion.create(
+    for chunk in completion(
             model=model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            provider=llm_provider,
             stream=True,
     ):
         content = chunk["choices"][0].get("delta", {}).get("content")
@@ -90,7 +85,7 @@ async def stream_response(model, messages, temperature, max_tokens, llm_provider
     return response
 
 
-def choose_agent(smart_llm_model: str, llm_provider: str, task: str) -> dict:
+def choose_agent(smart_llm_model: str, task: str, base_url: Optional[str] = None) -> dict:
     """Determines what server should be used
     Args:
         task (str): The research question the user asked
@@ -107,7 +102,7 @@ def choose_agent(smart_llm_model: str, llm_provider: str, task: str) -> dict:
                 {"role": "system", "content": f"{auto_agent_instructions()}"},
                 {"role": "user", "content": f"task: {task}"}],
             temperature=0,
-            llm_provider=llm_provider
+            base_url=base_url
         )
         agent_dict = json.loads(response)
         print(f"Agent: {agent_dict.get('server')}")
