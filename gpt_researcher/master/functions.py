@@ -1,13 +1,25 @@
 import asyncio
-from llama_index.core import service_context, text_splitter
-
-from openai import embeddings
 
 from gpt_researcher.config.config import Config
 from gpt_researcher.utils.llm import *
 from gpt_researcher.scraper import Scraper
 from gpt_researcher.master.prompts import *
 import json
+
+from llama_index.llms.ollama import Ollama
+from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.core import VectorStoreIndex, set_global_service_context
+from llama_index.core import ServiceContext
+
+llm = Ollama(model='mistral', system_prompt=system_prompt)
+embedding = OllamaEmbedding(model_name='nomic-embed-text')
+
+service_context = ServiceContext.from_defaults(
+    llm=llm,
+    embed_model= embedding,
+)
+
+set_global_service_context(service_context)
 
 
 def get_retriever(retriever):
@@ -243,10 +255,6 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         import validators
         from llama_index.readers.web import TrafilaturaWebReader
         from llama_index.readers.web import SimpleWebPageReader
-        from llama_index.llms.ollama import Ollama
-        from llama_index.embeddings.ollama import OllamaEmbedding
-        from llama_index.core import VectorStoreIndex
-        from llama_index.core import ServiceContext
         documents = []
         for url in list(urls):
             if validators.url(url):
@@ -269,21 +277,14 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         #     buffer_size=1, embed_model=embeddings
         # )
 
-        llm = Ollama(model='mistral', system_prompt=system_prompt)
-        embedding = OllamaEmbedding(model_name='nomic-embed-text')
+        index = VectorStoreIndex.from_documents(documents)
+        await stream_output("logs", f"✅ done indexing")
 
-        service_context = ServiceContext.from_defaults(
-            llm=llm,
-            embed_model= embedding,
-        )
+        query_engine = index.as_query_engine()
 
-        # index = VectorStoreIndex.from_documents(documents, service_context=service_context)
-        # await stream_output("logs", f"✅ done indexing")
-
-        # query_engine = index.as_query_engine()
-
-        # chat = index.as_chat_engine()
-        # await stream_output("logs", f"✅ query engine ready")
+        chat = index.as_chat_engine()
+        await stream_output("logs", f"✅ query engine ready")
+        print('chat: ', chat)
 
         # prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
 
@@ -294,7 +295,6 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
 
         # report = response_result.response.rstrip()
         # await stream_output("logs", f"✅ report ready")
-
 
         report = await create_chat_completion(
             model=cfg.smart_llm_model,
