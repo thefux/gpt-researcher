@@ -281,15 +281,23 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         await stream_output("logs", f"✅ done indexing")
 
         query_engine = index.as_query_engine()
+        chat = index.as_chat_engine()
         await stream_output("logs", f"✅ query engine ready")
 
         prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
-        response_result = query_engine.query(prompt)
+
+        ch = await chat.achat(prompt)
+        print(ch.response)
+
+        response_result = await query_engine.aquery(prompt)
+
 
         report = response_result.response.rstrip()
         await stream_output("logs", f"✅ report ready")
 
+
         await websocket.send_json({"type": "search-end", "output": report})
+
         # report = await create_chat_completion(
         #     model=cfg.smart_llm_model,
         #     messages=[
