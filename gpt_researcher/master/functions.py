@@ -9,6 +9,7 @@ from gpt_researcher.master.prompts import *
 import json
 
 from llama_index.llms.ollama import Ollama
+from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.core import VectorStoreIndex, set_global_service_context
 from llama_index.core import ServiceContext
@@ -39,6 +40,7 @@ YOU MUST WRITE THE REPORT WITH MARKDOWN SYNTAX.
 """
 ollama_llm = Ollama(model='mistral', system_prompt=system_prompt)
 ollama_embedding = OllamaEmbedding(model_name='nomic-embed-text')
+openai_llm = OpenAI(system_prompt=system_prompt)
 
 from llama_index.core import PromptHelper, ServiceContext
 from llama_index.embeddings.ollama import OllamaEmbedding
@@ -76,7 +78,7 @@ def create_service_context(
 
     return service_context
 
-set_global_service_context(create_service_context(ollama_llm))
+set_global_service_context(create_service_context(openai_llm))
 
 
 def get_retriever(retriever):
