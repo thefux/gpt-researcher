@@ -243,6 +243,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         from llama_index.readers.web import TrafilaturaWebReader
         from llama_index.readers.web import SimpleWebPageReader
         from llama_index.llms.ollama import Ollama
+        from llama_index.embeddings.ollama import OllamaEmbedding
         from llama_index.core import VectorStoreIndex
         print(urls)
         documents = []
@@ -260,7 +261,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
                     print(e)
                     continue
 
-        index = VectorStoreIndex.from_documents(documents)
+        index = VectorStoreIndex.from_documents(documents, llm=OllamaEmbedding(model_name='nomic-embed-text'))
 
         query_engine = index.as_query_engine(llm=Ollama(model='mistral', system_prompt=system_prompt))
         prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
