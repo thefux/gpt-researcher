@@ -300,11 +300,11 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
                     # document = SimpleWebPageReader(html_to_text=True).load_data([url])
                     document = TrafilaturaWebReader().load_data([url], include_links=True)
 
-                    await stream_output("logs", f"✅ done proccessing: {url}")
+                    await stream_output("logs", f"✅ done proccessing: {url}", websocket=websocket)
 
                     documents.extend(document)
                 except Exception as e:
-                    await stream_output("logs", f"Error: {e}")
+                    await stream_output("logs", f"Error: {e}", websocket=websocket)
                     continue
 
 
@@ -316,7 +316,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         # )
 
         index = VectorStoreIndex.from_documents(documents)
-        await stream_output("logs", f"✅ done indexing")
+        await stream_output("logs", f"✅ done indexing", websocket=websocket)
 
         query_engine = index.as_query_engine()
         prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
@@ -336,7 +336,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         #     base_url=cfg.base_url
         # )
 
-        await websocket.send_json({"type": "search-end", "output": report})
+        await websocket.send_json({"type": "search-end", "output": report}, websocket=websocket)
 
         print('report: ', report, type(report))
     except Exception as e:
