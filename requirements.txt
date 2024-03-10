@@ -29,3 +29,4 @@ llama-index-llms-ollama
 litellm
 llama-index-readers-web
 trafilatura
+llama-index-embeddings-huggingface

@@ -10,6 +10,9 @@ from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.core import VectorStoreIndex, set_global_service_context
 from llama_index.core import ServiceContext
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 system_prompt = f"""
 You are a helpful assistant. You will try your best to answer my questions.
@@ -37,7 +40,7 @@ embedding = OllamaEmbedding(model_name='nomic-embed-text')
 
 service_context = ServiceContext.from_defaults(
     llm=llm,
-    embed_model= embedding,
+    embed_model= embed_model,
 )
 
 set_global_service_context(service_context)
@@ -280,9 +283,9 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         index = VectorStoreIndex.from_documents(documents)
         await stream_output("logs", f"✅ done indexing")
 
-        query_engine = index.as_query_engine()
+        # query_engine = index.as_query_engine()
 
-        chat = index.as_chat_engine(llm=llm)
+        chat = index.as_chat_engine()
         await stream_output("logs", f"✅ query engine ready")
 
         prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
