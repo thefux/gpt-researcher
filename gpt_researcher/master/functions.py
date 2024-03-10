@@ -316,35 +316,11 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         index = VectorStoreIndex.from_documents(documents)
         await stream_output("logs", f"✅ done indexing")
 
-        # query_engine = index.as_query_engine()
+        query_engine = index.as_query_engine()
+        prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
+        response_result = await query_engine.aquery(prompt)
 
-        async def help():
-            try:
-                chat = index.as_chat_engine()
-                await stream_output("logs", f"✅ query engine ready")
-
-                prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
-                ch = await chat.achat(prompt)
-
-                report = ch.response.rstrip()
-                print('chat: ', ch.response)
-                return report
-            except Exception as e:
-                print(e)
-                return None
-
-        for _ in range(0, 2):
-            h = await help()
-            if (h is None):
-                continue
-
-            report = h
-            break
-
-        # response_result = await query_engine.aquery(prompt)
-
-        # report = response_result.response.rstrip()
-        # await stream_output("logs", f"✅ report ready")
+        report = response_result.response.rstrip()
 
         # report = await create_chat_completion(
         #     model=cfg.smart_llm_model,
