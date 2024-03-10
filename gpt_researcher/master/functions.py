@@ -282,31 +282,31 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
 
         query_engine = index.as_query_engine()
 
-        chat = index.as_chat_engine()
+        chat = index.as_chat_engine(llm=llm)
         await stream_output("logs", f"✅ query engine ready")
-        print('chat: ', chat)
 
-        # prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
+        prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
+        ch = await chat.achat(prompt)
 
-        # ch = await chat.achat(prompt)
-        # print(ch.response)
+        report = ch.response.rstrip()
+        print('chat: ', ch.response)
 
         # response_result = await query_engine.aquery(prompt)
 
         # report = response_result.response.rstrip()
         # await stream_output("logs", f"✅ report ready")
 
-        report = await create_chat_completion(
-            model=cfg.smart_llm_model,
-            messages=[
-                {"role": "system", "content": f"{system_prompt}"},
-                {"role": "user", "content": f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"}],
-            temperature=0.2,
-            stream=True,
-            websocket=websocket,
-            max_tokens=cfg.smart_token_limit,
-            base_url=cfg.base_url
-        )
+        # report = await create_chat_completion(
+        #     model=cfg.smart_llm_model,
+        #     messages=[
+        #         {"role": "system", "content": f"{system_prompt}"},
+        #         {"role": "user", "content": f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"}],
+        #     temperature=0.2,
+        #     stream=True,
+        #     websocket=websocket,
+        #     max_tokens=cfg.smart_token_limit,
+        #     base_url=cfg.base_url
+        # )
 
         await websocket.send_json({"type": "search-end", "output": report})
 
