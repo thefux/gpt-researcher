@@ -269,7 +269,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         #     buffer_size=1, embed_model=embeddings
         # )
 
-        llm = llm=Ollama(model='mistral', system_prompt=system_prompt)
+        llm = Ollama(model='mistral', system_prompt=system_prompt)
         embedding = OllamaEmbedding(model_name='nomic-embed-text')
 
         service_context = ServiceContext.from_defaults(
