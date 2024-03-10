@@ -1,10 +1,9 @@
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from llama_index.embeddings.ollama import OllamaEmbedding
 
 
 class Memory:
     def __init__(self, **kwargs):
-        self._embeddings = OpenAIEmbeddings()
+        self._embeddings = OllamaEmbedding(model_name='nomic-embed-text')
 
     def get_embeddings(self):
         return self._embeddings

@@ -31,18 +31,18 @@ class GPTResearcher:
 
     async def set_agent(self):
         # Generate Agent
-        self.agent, self.role = await choose_agent(self.query, self.cfg)
-        await stream_output("logs", self.agent, self.websocket)
+        # self.agent, self.role = await choose_agent(self.query, self.cfg)
+        # await stream_output("logs", self.agent, self.websocket)
+        pass
 
     async def set_context(self):
         # If specified, the researcher will use the given urls as the context for the research.
-        if self.source_urls:
-            self.context = await self.get_context_by_urls(self.source_urls)
-        else:
-            self.context = await self.get_context_by_search(self.query)
+        # if self.source_urls:
+        #     self.context = await self.get_context_by_urls(self.source_urls)
+        # else:
+        self.context = await self.get_context_by_search(self.query)
 
     async def generate_report(self):
-        # Write Research Report
         if self.report_type == "custom_report":
             self.role = self.cfg.agent_role if self.cfg.agent_role else self.role
         await stream_output("logs", f"✍️ Writing {self.report_type} for research task: {self.query}...", self.websocket)

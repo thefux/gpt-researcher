@@ -1,4 +1,7 @@
 import asyncio
+from llama_index.core import service_context, text_splitter
+
+from openai import embeddings
 
 from gpt_researcher.config.config import Config
 from gpt_researcher.utils.llm import *
@@ -245,27 +248,38 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         from llama_index.llms.ollama import Ollama
         from llama_index.embeddings.ollama import OllamaEmbedding
         from llama_index.core import VectorStoreIndex
-        print(urls)
+        from llama_index.core import ServiceContext
         documents = []
         for url in list(urls):
-            print(url)
             if validators.url(url):
-                print(url)
                 try:
-                    await stream_output("logs", f"✅ start searching urls")
                     # document = SimpleWebPageReader(html_to_text=True).load_data([url])
                     document = TrafilaturaWebReader().load_data([url], include_links=True)
-                    await stream_output("logs", f"✅ end searching urls")
                     documents.extend(document)
                 except Exception as e:
-                    print(e)
+                    await stream_output("logs", f"Error: {e}")
                     continue
 
-        index = VectorStoreIndex.from_documents(documents, llm=OllamaEmbedding(model_name='nomic-embed-text'))
 
-        query_engine = index.as_query_engine(llm=Ollama(model='mistral', system_prompt=system_prompt))
-        prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
+        # from llama_index.core.node_parser import SemanticSplitterNodeParser
+        # from llama_index.embeddings.ollama import OllamaEmbedding
+        # embeddings = OllamaEmbedding(model_name='nomic-embed-text')
+        # splitter = SemanticSplitterNodeParser(
+        #     buffer_size=1, embed_model=embeddings
+        # )
 
+        llm = llm=Ollama(model='mistral', system_prompt=system_prompt)
+        embedding = OllamaEmbedding(model_name='nomic-embed-text')
+
+        service_context = ServiceContext.from_defaults(
+            llm=llm,
+            embed_model= embedding,
+        )
+
+        index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+
+        query_engine = index.as_query_engine()
+        prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
         response_result = query_engine.query(prompt)
         report = response_result.response.rstrip()
 
