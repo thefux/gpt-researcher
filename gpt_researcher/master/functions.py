@@ -11,6 +11,27 @@ from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.core import VectorStoreIndex, set_global_service_context
 from llama_index.core import ServiceContext
 
+system_prompt = f"""
+You are a helpful assistant. You will try your best to answer my questions.
+Here is how you should answer my questions:
+- use the contex provided to answer the question
+
+Be very CONCISE in your responses, First show me your answer,
+and then show me the SOURCE(s) and EXTRACT(s) to justify your answer,
+in this format:
+
+<your answer here>
+SOURCE: https://www.wikihow.com/Be-a-Good-Assistant-Manager
+EXTRACT: Be a Good Assistant ... requires good leadership skills.
+
+SOURCE: ...
+EXTRACT: ...
+
+For the EXTRACT, ONLY show up to first 3 words, and last 3 words.
+DO NOT MAKE UP YOUR OWN SOURCES; ONLY USE SOURCES YOU FIND FROM A WEB SEARCH.
+
+YOU MUST WRITE THE REPORT WITH MARKDOWN SYNTAX.
+"""
 llm = Ollama(model='mistral', system_prompt=system_prompt)
 embedding = OllamaEmbedding(model_name='nomic-embed-text')
 
@@ -231,27 +252,6 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
     generate_prompt = get_report_by_type(report_type)
     report = "error while working on ur request"
     try:
-        system_prompt = f"""
-        You are a helpful assistant. You will try your best to answer my questions.
-        Here is how you should answer my questions:
-        - use the contex provided to answer the question
-
-        Be very CONCISE in your responses, First show me your answer,
-        and then show me the SOURCE(s) and EXTRACT(s) to justify your answer,
-        in this format:
-
-        <your answer here>
-        SOURCE: https://www.wikihow.com/Be-a-Good-Assistant-Manager
-        EXTRACT: Be a Good Assistant ... requires good leadership skills.
-
-        SOURCE: ...
-        EXTRACT: ...
-
-        For the EXTRACT, ONLY show up to first 3 words, and last 3 words.
-        DO NOT MAKE UP YOUR OWN SOURCES; ONLY USE SOURCES YOU FIND FROM A WEB SEARCH.
-
-        YOU MUST WRITE THE REPORT WITH MARKDOWN SYNTAX.
-        """
         import validators
         from llama_index.readers.web import TrafilaturaWebReader
         from llama_index.readers.web import SimpleWebPageReader
