@@ -1,5 +1,7 @@
 import asyncio
 
+from litellm import ollama
+
 from gpt_researcher.config.config import Config
 from gpt_researcher.utils.llm import *
 from gpt_researcher.scraper import Scraper
@@ -35,15 +37,46 @@ DO NOT MAKE UP YOUR OWN SOURCES; ONLY USE SOURCES YOU FIND FROM A WEB SEARCH.
 
 YOU MUST WRITE THE REPORT WITH MARKDOWN SYNTAX.
 """
-llm = Ollama(model='mistral', system_prompt=system_prompt)
-embedding = OllamaEmbedding(model_name='nomic-embed-text')
+ollama_llm = Ollama(model='mistral', system_prompt=system_prompt)
+ollama_embedding = OllamaEmbedding(model_name='nomic-embed-text')
 
-service_context = ServiceContext.from_defaults(
-    llm=llm,
-    embed_model= embed_model,
-)
+from llama_index.core import PromptHelper, ServiceContext
+from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SimpleNodeParser
 
-set_global_service_context(service_context)
+def create_service_context(
+    model,
+    max_input_size = 4096,        # Context window for the LLM.
+    num_outputs = 256,            # Number of output tokens for the LLM.
+    chunk_overlap_ratio = 0.2,    # Chunk overlap as a ratio of chunk size.
+    chunk_size_limit = None,      # Maximum chunk size to use.
+    chunk_overlap = 30,           # Chunk overlap to use.
+    chunk_size = 2048,            # Set chunk overlap to use.
+    ):
+
+    node_parser = SimpleNodeParser.from_defaults(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+
+    prompt_helper = PromptHelper(
+        max_input_size,
+        num_outputs,
+        chunk_overlap_ratio,
+        chunk_size_limit=chunk_size_limit)
+
+    openai_embedding = OpenAIEmbedding()
+    ollama_embedding = OllamaEmbedding(model_name='nomic-embed-text')
+
+    service_context = ServiceContext.from_defaults(
+        llm=model,
+        embed_model=ollama_embedding,
+        node_parser=node_parser,
+        prompt_helper=prompt_helper)
+
+    return service_context
+
+set_global_service_context(create_service_context(ollama_llm))
 
 
 def get_retriever(retriever):
