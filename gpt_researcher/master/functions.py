@@ -100,8 +100,6 @@ async def get_sub_queries(query, agent_role_prompt, cfg: Config):
         temperature=0,
         base_url=cfg.base_url
     )
-    print("aaaaaasdfasdf asdf asdf asdf")
-    print(response)
     sub_queries = json.loads(response)
     return sub_queries
 
@@ -255,6 +253,9 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
                 try:
                     # document = SimpleWebPageReader(html_to_text=True).load_data([url])
                     document = TrafilaturaWebReader().load_data([url], include_links=True)
+
+                    await stream_output("logs", f"✅ done proccessing: {url}")
+
                     documents.extend(document)
                 except Exception as e:
                     await stream_output("logs", f"Error: {e}")
@@ -277,11 +278,13 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         )
 
         index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+        await stream_output("logs", f"✅ done indexing")
 
         query_engine = index.as_query_engine()
         prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
         response_result = query_engine.query(prompt)
         report = response_result.response.rstrip()
+        await stream_output("logs", f"✅ report ready")
 
         await websocket.send_json({"type": "search-end", "output": report})
         # report = await create_chat_completion(
