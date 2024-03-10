@@ -1,4 +1,3 @@
-import time
 from gpt_researcher.config import Config
 from gpt_researcher.master.functions import *
 from gpt_researcher.context.compression import ContextCompressor
@@ -49,7 +48,7 @@ class GPTResearcher:
         await stream_output("logs", f"✍️ Writing {self.report_type} for research task: {self.query}...", self.websocket)
         return await generate_report(query=self.query, context=self.context,
                                        agent_role_prompt=self.role, report_type=self.report_type,
-                                       websocket=self.websocket, cfg=self.cfg)
+                                       websocket=self.websocket, cfg=self.cfg, urls=self.visited_urls)
 
     async def run(self):
         """
@@ -87,15 +86,27 @@ class GPTResearcher:
                             f"🧠 I will conduct my research based on the following queries: {sub_queries}...",
                             self.websocket)
 
-        # Run Sub-Queries
+        # scraped_sites = []
+        new_urls = []
         for sub_query in sub_queries:
+            retriever = self.retriever(sub_query)
+            search_results = retriever.search(max_results=self.cfg.max_search_results_per_query)
+            new_search_urls = await self.get_new_urls([url.get("href") for url in search_results])
+
+            new_urls.extend(new_search_urls)
             await stream_output("logs", f"\n🔎 Running research for '{sub_query}'...", self.websocket)
-            scraped_sites = await self.scrape_sites_by_query(sub_query)
-            content = await self.get_similar_content_by_query(sub_query, scraped_sites)
-            await stream_output("logs", f"📃 {content}", self.websocket)
-            context.append(content)
+            # scraped_sites = await self.scrape_sites_by_query(new_urls)
+            # content = await self.get_similar_content_by_query(sub_query, scraped_sites)
+            # await stream_output("logs", f"📃 {content}", self.websocket)
+            # context.append(content)
 
         return context
+        # from llama_index.core.node_parser import SemanticSplitterNodeParser
+        # from llama_index.embeddings.ollama import OllamaEmbedding
+        # embeddings = OllamaEmbedding(model_name='nomic-embed-text')
+        # splitter = SemanticSplitterNodeParser(
+        #     buffer_size=1, embed_model=embeddings
+        # )
 
     async def get_new_urls(self, url_set_input):
         """ Gets the new urls from the given url set.
@@ -113,7 +124,7 @@ class GPTResearcher:
 
         return new_urls
 
-    async def scrape_sites_by_query(self, sub_query):
+    async def scrape_sites_by_query(self, urls):
         """
         Runs a sub-query
         Args:
@@ -122,15 +133,10 @@ class GPTResearcher:
         Returns:
             Summary
         """
-        # Get Urls
-        retriever = self.retriever(sub_query)
-        search_results = retriever.search(max_results=self.cfg.max_search_results_per_query)
-        new_search_urls = await self.get_new_urls([url.get("href") for url in search_results])
-
         # Scrape Urls
         # await stream_output("logs", f"📝Scraping urls {new_search_urls}...\n", self.websocket)
         await stream_output("logs", f"🤔Researching for relevant information...\n", self.websocket)
-        scraped_content_results = scrape_urls(new_search_urls, self.cfg)
+        scraped_content_results = scrape_urls(urls, self.cfg)
         return scraped_content_results
 
     async def get_similar_content_by_query(self, query, pages):

@@ -1,4 +1,5 @@
 import asyncio
+
 from gpt_researcher.config.config import Config
 from gpt_researcher.utils.llm import *
 from gpt_researcher.scraper import Scraper
@@ -96,6 +97,8 @@ async def get_sub_queries(query, agent_role_prompt, cfg: Config):
         temperature=0,
         base_url=cfg.base_url
     )
+    print("aaaaaasdfasdf asdf asdf asdf")
+    print(response)
     sub_queries = json.loads(response)
     return sub_queries
 
@@ -197,7 +200,7 @@ async def summarize_url(query, raw_data, agent_role_prompt, cfg: Config):
 
 
 
-async def generate_report(query, context, agent_role_prompt, report_type, websocket, cfg: Config):
+async def generate_report(query, context, agent_role_prompt, report_type, websocket, cfg: Config, urls):
     """
     generates the final report
     Args:
@@ -213,7 +216,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
 
     """
     generate_prompt = get_report_by_type(report_type)
-    report = ""
+    report = "error while working on ur request"
     try:
         system_prompt = f"""
         You are a helpful assistant. You will try your best to answer my questions.
@@ -236,19 +239,50 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
 
         YOU MUST WRITE THE REPORT WITH MARKDOWN SYNTAX.
         """
-        report = await create_chat_completion(
-            model=cfg.smart_llm_model,
-            messages=[
-                {"role": "system", "content": f"{system_prompt}"},
-                {"role": "user", "content": f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"}],
-            temperature=0.2,
-            stream=True,
-            websocket=websocket,
-            max_tokens=cfg.smart_token_limit,
-            base_url=cfg.base_url
-        )
+        import validators
+        from llama_index.readers.web import TrafilaturaWebReader
+        from llama_index.readers.web import SimpleWebPageReader
+        from llama_index.llms.ollama import Ollama
+        from llama_index.core import VectorStoreIndex
+        print(urls)
+        documents = []
+        for url in list(urls):
+            print(url)
+            if validators.url(url):
+                print(url)
+                try:
+                    await stream_output("logs", f"✅ start searching urls")
+                    # document = SimpleWebPageReader(html_to_text=True).load_data([url])
+                    document = TrafilaturaWebReader().load_data([url], include_links=True)
+                    await stream_output("logs", f"✅ end searching urls")
+                    documents.extend(document)
+                except Exception as e:
+                    print(e)
+                    continue
+
+        index = VectorStoreIndex.from_documents(documents)
+
+        query_engine = index.as_query_engine(llm=Ollama(model='mistral', system_prompt=system_prompt))
+        prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
+
+        response_result = query_engine.query(prompt)
+        report = response_result.response.rstrip()
+
+        await websocket.send_json({"type": "search-end", "output": report})
+        # report = await create_chat_completion(
+        #     model=cfg.smart_llm_model,
+        #     messages=[
+        #         {"role": "system", "content": f"{system_prompt}"},
+        #         {"role": "user", "content": f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"}],
+        #     temperature=0.2,
+        #     stream=True,
+        #     websocket=websocket,
+        #     max_tokens=cfg.smart_token_limit,
+        #     base_url=cfg.base_url
+        # )
+        print('report: ', report, type(report))
     except Exception as e:
-        print(f"{Fore.RED}Error in generate_report: {e}{Style.RESET_ALL}")
+        await stream_output("logs", f"{Fore.RED}Error in generate_report: {e}{Style.RESET_ALL}")
 
     return report
 
