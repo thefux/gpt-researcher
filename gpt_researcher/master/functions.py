@@ -318,14 +318,28 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
 
         # query_engine = index.as_query_engine()
 
-        chat = index.as_chat_engine()
-        await stream_output("logs", f"✅ query engine ready")
+        async def help():
+            try:
+                chat = index.as_chat_engine()
+                await stream_output("logs", f"✅ query engine ready")
 
-        prompt = f"{generate_prompt(query, context, cfg.report_format, cfg.total_words)}"
-        ch = await chat.achat(prompt)
+                prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
+                ch = await chat.achat(prompt)
 
-        report = ch.response.rstrip()
-        print('chat: ', ch.response)
+                report = ch.response.rstrip()
+                print('chat: ', ch.response)
+                return report
+            except Exception as e:
+                print(e)
+                return None
+
+        for _ in range(0, 2):
+            h = await help()
+            if (h is None):
+                continue
+
+            report = h
+            break
 
         # response_result = await query_engine.aquery(prompt)
 
