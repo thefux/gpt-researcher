@@ -300,11 +300,12 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
                     # document = SimpleWebPageReader(html_to_text=True).load_data([url])
                     document = TrafilaturaWebReader().load_data([url], include_links=True)
 
-                    await stream_output("logs", f"✅ done proccessing: {url}")
+                    await stream_output("logs", f"✅ done proccessing: {url}", websocket)
 
+                    await websocket.send_json({"type": "url", "output": url})
                     documents.extend(document)
                 except Exception as e:
-                    await stream_output("logs", f"Error: {e}")
+                    await stream_output("logs", f"Error: {e}", websocket)
                     continue
 
 
@@ -317,6 +318,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
 
         index = VectorStoreIndex.from_documents(documents)
         await stream_output("logs", f"✅ done indexing", websocket=websocket)
+        await websocket.send_json({"type": "indexing", "output": 'done'})
 
         from llama_index.core import get_response_synthesizer
 
@@ -324,6 +326,9 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
 
         query_engine = index.as_query_engine(response_synthesizer=synth)
         prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
+
+        await websocket.send_json({"type": "collecting", "output": 'start'})
+
         response_result = query_engine.query(prompt)
 
         for text in response_result.response_gen:
