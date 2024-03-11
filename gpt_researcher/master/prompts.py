@@ -66,7 +66,7 @@ def generate_custom_report_prompt(query_prompt, context, report_format="apa", to
     return 'Your task is to meticulously observe and extract key information from provided data'\
             f' to extract infromation to answer the following query or task "{query_prompt}"--' \
            " The search should focus on the answer to the query, should be well structured, informative," \
-           f" in depth and comprehensive, with facts and numbers if available and a maximum of 200 words.\n" \
+           f" in depth and comprehensive, with facts and numbers if available and solutions if possible.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n" \
            "You must write the report with markdown syntax.\n " \
            f"Use an unbiased and journalistic tone. \n" \
