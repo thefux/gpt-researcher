@@ -28,7 +28,7 @@ def startup_event():
 
 async def run_task(task, report_type, websocket):
     report = await manager.start_streaming(task, report_type, websocket)
-    # await websocket.send_json({"type": "search-end", "output": report})
+    await websocket.send_json({"type": "search-end", "output": report})
     # path = await write_md_to_pdf(report)
     # await websocket.send_json({"type": "path", "output": path})
 
@@ -43,7 +43,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 task = json_data.get("task")
                 report_type = json_data.get("report_type")
                 if task and report_type:
-                    asyncio.create_task(run_task(task, report_type, websocket))
+                    await run_task(task, report_type, websocket)
+                    # asyncio.create_task(run_task(task, report_type, websocket))
                 else:
                     print("Error: not enough parameters provided.")
 

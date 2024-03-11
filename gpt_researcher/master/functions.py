@@ -300,11 +300,11 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
                     # document = SimpleWebPageReader(html_to_text=True).load_data([url])
                     document = TrafilaturaWebReader().load_data([url], include_links=True)
 
-                    await stream_output("logs", f"✅ done proccessing: {url}", websocket=websocket)
+                    await stream_output("logs", f"✅ done proccessing: {url}")
 
                     documents.extend(document)
                 except Exception as e:
-                    await stream_output("logs", f"Error: {e}", websocket=websocket)
+                    await stream_output("logs", f"Error: {e}")
                     continue
 
 
@@ -335,8 +335,6 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         #     max_tokens=cfg.smart_token_limit,
         #     base_url=cfg.base_url
         # )
-
-        await websocket.send_json({"type": "search-end", "output": report}, websocket=websocket)
 
         print('report: ', report, type(report))
     except Exception as e:
