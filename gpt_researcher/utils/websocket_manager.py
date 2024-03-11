@@ -55,14 +55,14 @@ class WebSocketManager:
 async def run_agent(task, report_type, websocket):
     """Run the agent."""
     # measure time
-    start_time = datetime.datetime.now()
+    # start_time = datetime.datetime.now()
     # add customized JSON config file path here
     config_path = None
     # run agent
     researcher = GPTResearcher(query=task, report_type=report_type, source_urls=None, config_path=config_path, websocket=websocket)
     report = await researcher.run()
     # measure time
-    end_time = datetime.datetime.now()
-    await websocket.send_json({"type": "logs", "output": f"\nTotal run time: {end_time - start_time}\n"})
+    # end_time = datetime.datetime.now()
+    # await websocket.send_json({"type": "logs", "output": f"\nTotal run time: {end_time - start_time}\n"})
 
     return report
