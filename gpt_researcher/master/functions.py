@@ -78,7 +78,7 @@ def create_service_context(
 
     return service_context
 
-set_global_service_context(create_service_context(openai_llm))
+set_global_service_context(create_service_context(ollama_llm))
 
 
 def get_retriever(retriever):
