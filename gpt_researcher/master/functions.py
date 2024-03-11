@@ -318,11 +318,19 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         index = VectorStoreIndex.from_documents(documents)
         await stream_output("logs", f"✅ done indexing", websocket=websocket)
 
-        query_engine = index.as_query_engine()
-        prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
-        response_result = await query_engine.aquery(prompt)
+        from llama_index.core import get_response_synthesizer
 
-        report = response_result.response.rstrip()
+        synth = get_response_synthesizer(streaming=True)
+
+        query_engine = index.as_query_engine(response_synthesizer=synth)
+        prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
+        response_result = query_engine.query(prompt)
+
+        for text in response_result.response_gen:
+            await websocket.send_json({"type": "report", "output": text})
+            print('report: ', text, type(text))
+
+        # report = response_result.response.rstrip()
 
         # report = await create_chat_completion(
         #     model=cfg.smart_llm_model,
@@ -336,7 +344,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         #     base_url=cfg.base_url
         # )
 
-        print('report: ', report, type(report))
+        # print('report: ', report, type(report))
     except Exception as e:
         await stream_output("logs", f"{Fore.RED}Error in generate_report: {e}{Style.RESET_ALL}")
 
