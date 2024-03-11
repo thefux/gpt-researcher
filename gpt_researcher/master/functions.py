@@ -1,6 +1,6 @@
 import asyncio
 
-from litellm import ollama
+from litellm import ollama, openai
 
 from gpt_researcher.config.config import Config
 from gpt_researcher.utils.llm import *
@@ -10,6 +10,7 @@ import json
 
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.core import VectorStoreIndex, set_global_service_context
 from llama_index.core import ServiceContext
@@ -39,8 +40,10 @@ DO NOT MAKE UP YOUR OWN SOURCES; ONLY USE SOURCES YOU FIND FROM A WEB SEARCH.
 YOU MUST WRITE THE REPORT WITH MARKDOWN SYNTAX.
 """
 ollama_llm = Ollama(model='mistral', system_prompt=system_prompt)
-ollama_embedding = OllamaEmbedding(model_name='nomic-embed-text')
 openai_llm = OpenAI(system_prompt=system_prompt)
+
+openai_embedding = OpenAIEmbedding(model_name='gpt-4-preview-turbo')
+ollama_embedding = OllamaEmbedding(model_name='nomic-embed-text')
 
 from llama_index.core import PromptHelper, ServiceContext
 from llama_index.embeddings.ollama import OllamaEmbedding
@@ -72,13 +75,13 @@ def create_service_context(
 
     service_context = ServiceContext.from_defaults(
         llm=model,
-        embed_model=ollama_embedding,
+        embed_model=openai_embedding,
         node_parser=node_parser,
         prompt_helper=prompt_helper)
 
     return service_context
 
-set_global_service_context(create_service_context(ollama_llm))
+set_global_service_context(create_service_context(openai_llm))
 
 
 def get_retriever(retriever):
