@@ -296,17 +296,21 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         import validators
         from llama_index.readers.web import TrafilaturaWebReader
         from llama_index.readers.web import SimpleWebPageReader
+        from contextlib import suppress
         documents = []
         for url in list(urls):
             if validators.url(url):
                 try:
-                    # document = SimpleWebPageReader(html_to_text=True).load_data([url])
-                    document = TrafilaturaWebReader().load_data([url], include_links=True)
+                    async def process_url(url):
+                        # document = SimpleWebPageReader(html_to_text=True).load_data([url])
+                        document = TrafilaturaWebReader().load_data([url], include_links=True)
+                        await stream_output("logs", f"✅ done proccessing: {url}", websocket)
+                        await websocket.send_json({"type": "url", "output": url})
+                        documents.extend(document)
 
-                    await stream_output("logs", f"✅ done proccessing: {url}", websocket)
+                    with suppress(asyncio.TimeoutError):
+                        await asyncio.wait_for(process_url(url), timeout=3)
 
-                    await websocket.send_json({"type": "url", "output": url})
-                    documents.extend(document)
                 except Exception as e:
                     await stream_output("logs", f"Error: {e}", websocket)
                     continue
