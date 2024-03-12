@@ -12,7 +12,7 @@ def generate_search_queries_prompt(question, max_iterations=3):
         f"Respond STRICTLY in the format: [\"Query 1\", \"Query 2\", \"Query 3\"] without any introductory or additional text.\n"\
         f"ONLY write responses with same LANGUAGE as the question. "\
         f"Breakdown any complex request/question into smaller parts for better responses.\n"\
-        f"Input question: {question}"\
+        f"Input question: {question}"
     return f'Write {max_iterations} google search queries to search online that form an objective opinion from the following: "{question}"' \
            f'Use the current date if needed: {datetime.now().strftime("%B %d, %Y")}.\n' \
            f'You must respond with a list of strings in the following format: ["query 1", "query 2", "query 3"].'
