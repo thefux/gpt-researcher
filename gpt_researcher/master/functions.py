@@ -275,7 +275,7 @@ async def summarize_url(query, raw_data, agent_role_prompt, cfg: Config):
 
 
 
-async def generate_report(query, context, agent_role_prompt, report_type, websocket, cfg: Config, urls):
+async def generate_report(query, context, agent_role_prompt, report_type, cfg: Config, urls):
     """
     generates the final report
     Args:
@@ -304,15 +304,14 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
                     async def process_url(url):
                         # document = SimpleWebPageReader(html_to_text=True).load_data([url])
                         document = TrafilaturaWebReader().load_data([url], include_links=True)
-                        await stream_output("logs", f"✅ done proccessing: {url}", websocket)
-                        await websocket.send_json({"type": "url", "output": url})
+                        await stream_output("logs", f"✅ done proccessing: {url}")
                         documents.extend(document)
 
                     with suppress(asyncio.TimeoutError):
                         await asyncio.wait_for(process_url(url), timeout=3)
 
                 except Exception as e:
-                    await stream_output("logs", f"Error: {e}", websocket)
+                    await stream_output("logs", f"Error: {e}")
                     continue
 
 
@@ -324,23 +323,18 @@ async def generate_report(query, context, agent_role_prompt, report_type, websoc
         # )
 
         index = VectorStoreIndex.from_documents(documents)
-        await stream_output("logs", f"✅ done indexing", websocket=websocket)
-        await websocket.send_json({"type": "indexing", "output": 'done'})
+        await stream_output("logs", f"✅ done indexing")
 
         from llama_index.core import get_response_synthesizer
 
-        synth = get_response_synthesizer(streaming=True)
-
-        query_engine = index.as_query_engine(response_synthesizer=synth)
+        query_engine = index.as_query_engine()
         prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
-
-        await websocket.send_json({"type": "collecting", "output": 'start'})
 
         response_result = query_engine.query(prompt)
 
-        for text in response_result.response_gen:
-            await websocket.send_json({"type": "report", "output": text})
-            print('report: ', text, type(text))
+        report = response_result.response.rstrip()
+
+        await stream_output("logs", f"✅ report ready: {report}")
 
         # report = response_result.response.rstrip()
 

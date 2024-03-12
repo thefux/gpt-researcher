@@ -6,10 +6,13 @@ def generate_search_queries_prompt(question, max_iterations=3):
     Args: question (str): The question to generate the search queries prompt for
     Returns: str: The search queries prompt for the given question
     """
-    return f'You are a helpful assistant that returns a python list of strings. Reponses only contain this python list and no introductory text.'\
-           f'ONLY provide a python list of {max_iterations} Google search queries related to the input question. Respond STRICTLY in the format: ["Query 1", "Query 2", "Query 3"] without any introductory or additional text.'\
-           f'ONLY write reponses with same LANGAUGE as the question'\
-           f'Input question: {question}'
+    return f"You are a helpful assistant that returns a python list of strings. "\
+        f"Responses only contain this python list and no introductory text.\n"\
+        f"ONLY provide a python list of {max_iterations} Google search queries related to the input question. "\
+        f"Respond STRICTLY in the format: [\"Query 1\", \"Query 2\", \"Query 3\"] without any introductory or additional text.\n"\
+        f"ONLY write responses with same LANGUAGE as the question. "\
+        f"Breakdown any complex request/question into smaller parts for better responses.\n"\
+        f"Input question: {question}"\
     return f'Write {max_iterations} google search queries to search online that form an objective opinion from the following: "{question}"' \
            f'Use the current date if needed: {datetime.now().strftime("%B %d, %Y")}.\n' \
            f'You must respond with a list of strings in the following format: ["query 1", "query 2", "query 3"].'
@@ -59,14 +62,14 @@ def generate_resource_report_prompt(question, context, report_format="apa", tota
            'The report should have a minimum length of 700 words.\n' \
             'You MUST include all relevant source urls.'
 
-def generate_custom_report_prompt(query_prompt, context, report_format="apa", total_words=500):
+def generate_custom_report_prompt(query_prompt, context, report_format="apa", total_words=200):
 
     # return f'Information: """{context}"""\n\n' \
     #        f'Using the above information, answer the following' \
-    return 'Your task is to meticulously observe and extract key information from provided data'\
+    return 'Your task is to meticulously observe and extract key information from provided data/context'\
             f' to extract infromation to answer the following query or task "{query_prompt}"--' \
            " The search should focus on the answer to the query, should be well structured, informative," \
-           f" in depth and comprehensive, with facts and numbers if available and solutions if possible.\n" \
+           f" in depth and comprehensive, with facts and numbers if available and a maximum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n" \
            "You must write the report with markdown syntax.\n " \
            f"Use an unbiased and journalistic tone. \n" \

@@ -5,6 +5,7 @@ import json
 import os
 from gpt_researcher.utils.websocket_manager import WebSocketManager
 from .utils import write_md_to_pdf
+from gpt_researcher.utils.api_manager import run_agent
 
 import asyncio
 
@@ -16,38 +17,46 @@ class ResearchRequest(BaseModel):
 
 app = FastAPI()
 
-manager = WebSocketManager()
+# manager = WebSocketManager()
+
 
 
 # Dynamic directory for outputs once first research is run
-@app.on_event("startup")
-def startup_event():
-    if not os.path.isdir("outputs"):
-        os.makedirs("outputs")
-    app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
+# @app.on_event("startup")
+# def startup_event():
+#     if not os.path.isdir("outputs"):
+#         os.makedirs("outputs")
+#     app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
 
-async def run_task(task, report_type, websocket):
-    report = await manager.start_streaming(task, report_type, websocket)
-    await websocket.send_json({"type": "search-end", "output": report})
+# async def run_task(task, report_type, websocket):
+#     report = await manager.start_streaming(task, report_type)
+#     await websocket.send_json({"type": "search-end", "output": report})
     # path = await write_md_to_pdf(report)
     # await websocket.send_json({"type": "path", "output": path})
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            if data.startswith("start"):
-                json_data = json.loads(data[6:])
-                task = json_data.get("task")
-                report_type = json_data.get("report_type")
-                if task and report_type:
-                    await run_task(task, report_type, websocket)
-                    # asyncio.create_task(run_task(task, report_type, websocket))
-                else:
-                    print("Error: not enough parameters provided.")
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket):
+#     await manager.connect(websocket)
+#     try:
+#         while True:
+#             data = await websocket.receive_text()
+#             if data.startswith("start"):
+#                 json_data = json.loads(data[6:])
+#                 task = json_data.get("task")
+#                 report_type = json_data.get("report_type")
+#                 if task and report_type:
+#                     await run_task(task, report_type, websocket)
+#                     # asyncio.create_task(run_task(task, report_type, websocket))
+#                 else:
+#                     print("Error: not enough parameters provided.")
 
-    except WebSocketDisconnect:
-        await manager.disconnect(websocket)
+#     except WebSocketDisconnect:
+#         await manager.disconnect(websocket)
 
+class Request(BaseModel):
+    query: str
+    type: str = 'custom_report'
+
+@app.post("/request")
+async def request(request: Request):
+    return {"response": await run_agent(request.query, request.type)}

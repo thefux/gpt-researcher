@@ -48,7 +48,7 @@ class GPTResearcher:
         await stream_output("logs", f"✍️ Writing {self.report_type} for research task: {self.query}...", self.websocket)
         return await generate_report(query=self.query, context=self.context,
                                        agent_role_prompt=self.role, report_type=self.report_type,
-                                       websocket=self.websocket, cfg=self.cfg, urls=self.visited_urls)
+                                       cfg=self.cfg, urls=self.visited_urls)
 
     async def run(self):
         """
@@ -58,7 +58,7 @@ class GPTResearcher:
         """
         print(f"🔎 Running research for '{self.query}'...")
 
-        await self.set_agent()
+        await self.set_agent() # make use of function calling
         await self.set_context()
         return await self.generate_report()
 
@@ -83,8 +83,7 @@ class GPTResearcher:
         # Generate Sub-Queries including original query
         sub_queries = await get_sub_queries(query, self.role, self.cfg)
         await stream_output("logs",
-                            f"🧠 I will conduct my research based on the following queries: {sub_queries}...",
-                            self.websocket)
+                            f"🧠 I will conduct my research based on the following queries: {sub_queries}...")
 
         # scraped_sites = []
         new_urls = []
@@ -94,7 +93,7 @@ class GPTResearcher:
             new_search_urls = await self.get_new_urls([url.get("href") for url in search_results])
 
             new_urls.extend(new_search_urls)
-            await stream_output("logs", f"\n🔎 Running research for '{sub_query}'...", self.websocket)
+            await stream_output("logs", f"\n🔎 Running research for '{sub_query}'...")
             # scraped_sites = await self.scrape_sites_by_query(new_urls)
             # content = await self.get_similar_content_by_query(sub_query, scraped_sites)
             # await stream_output("logs", f"📃 {content}", self.websocket)
