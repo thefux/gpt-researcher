@@ -69,6 +69,7 @@ def generate_custom_report_prompt(query_prompt, context, report_format="apa", to
     #        f'Using the above information, answer the following' \
     return 'Your task is to meticulously observe and extract key information from provided data/context'\
             f' to extract infromation to answer the following query or task "{query_prompt}"--' \
+            f'IF THE QUERY IS SEEKING A SOLUTION OR DIAGNOSIS FOR A PARTICULAR PROBLEM, ENDEAVOR TO PROPOSE A SOLUTION OR DELINEATE THE ISSUE, BUT ONLY IF EXPLICITLY REQUESTED TO DO SO.' \
            " The search should focus on the answer to the query, should be well structured, informative," \
            f" in depth and comprehensive, with facts and numbers if available and a minimum of {total_words} words.\n" \
            "You should strive to write the report as long as you can using all relevant and necessary information provided.\n" \
