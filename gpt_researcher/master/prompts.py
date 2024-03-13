@@ -6,13 +6,14 @@ def generate_search_queries_prompt(question, max_iterations=3):
     Args: question (str): The question to generate the search queries prompt for
     Returns: str: The search queries prompt for the given question
     """
-    return f"You are a helpful assistant that returns a python list of strings. "\
+    return f"You are a helpful assistant that returns a python list of strings.\n "\
+        f"Breakdown any complex request/question into smaller parts for better response.\n"\
         f"Responses only contain this python list and no introductory text.\n"\
-        f"ONLY provide a python list of {max_iterations} Google search queries related to the input question. "\
+        f"ONLY provide a python list of {max_iterations} Google search queries related to the input question.\n"\
         f"Respond STRICTLY in the format: [\"Query 1\", \"Query 2\", \"Query 3\"] without any introductory or additional text.\n"\
-        f"ONLY write responses with same LANGUAGE as the question. "\
-        f"Breakdown any complex request/question into smaller parts for better responses.\n"\
-        f"Input question: {question}"
+        f"ONLY write responses with same LANGUAGE as the question.\n"\
+        f"Input question: {question}\n"\
+        f"RESPOND STRICTLY IN THIS FORMAT: [\"QUERY 1\", \"QUERY 2\", \"QUERY 3\"]"
     return f'Write {max_iterations} google search queries to search online that form an objective opinion from the following: "{question}"' \
            f'Use the current date if needed: {datetime.now().strftime("%B %d, %Y")}.\n' \
            f'You must respond with a list of strings in the following format: ["query 1", "query 2", "query 3"].'
