@@ -327,7 +327,7 @@ async def generate_report(query, context, agent_role_prompt, report_type, cfg: C
 
         from llama_index.core import get_response_synthesizer
 
-        query_engine = index.as_query_engine()
+        query_engine = index.as_query_engine(llm=openai_llm)
         prompt = f"{generate_prompt(query, context, 'markdown', cfg.total_words)}"
 
         response_result = query_engine.query(prompt)
