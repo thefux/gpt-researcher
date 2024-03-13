@@ -33,7 +33,8 @@ class Config:
         self.report_format = os.getenv('REPORT_FORMAT', "APA")
         self.max_iterations = int(os.getenv('MAX_ITERATIONS', 3))
         self.agent_role = os.getenv('AGENT_ROLE', None)
-        self.base_url="http://0.0.0.0:11434"
+        self.base_url = "https://api.openai.com/v1/"
+        # self.base_url="http://0.0.0.0:11434"
 
         self.load_config_file()
 
